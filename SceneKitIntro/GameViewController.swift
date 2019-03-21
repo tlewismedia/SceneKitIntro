@@ -33,7 +33,7 @@ class GameViewController: UIViewController {
     
     func setUpView() {
         scnView = self.view as! SCNView
-        scnView.allowsCameraControl = true
+        scnView.allowsCameraControl = false
         scnView.autoenablesDefaultLighting = true
         scnView.delegate = self
         scnView.isPlaying = true
@@ -54,6 +54,23 @@ class GameViewController: UIViewController {
         cameraNode.camera = SCNCamera()
         cameraNode.position = SCNVector3(x: 0, y: Float(cameraPosition), z: 15)
         scnScene.rootNode.addChildNode(cameraNode)
+    }
+    
+    func handleTouch(node: SCNNode) {
+        if node.name == "notRed" {
+            node.removeFromParentNode()
+            
+//            add score keeping here
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?){
+        let touch = touches.first!
+        let location = touch.location(in: scnView)
+        let hitResults = scnView.hitTest(location, options: nil)
+        if let result = hitResults.first {
+            handleTouch(node: result.node)
+        }
     }
     
     func spawnShape() {
@@ -91,7 +108,17 @@ class GameViewController: UIViewController {
         let position = SCNVector3(x: 0.07, y: 0.07, z: 0.07)
         
         geometryNode.physicsBody?.applyForce(force, at: position, asImpulse: true)
-        geometry.materials.first?.diffuse.contents = UIColor.random()
+        
+        let color = UIColor.random()
+        geometry.materials.first?.diffuse.contents = color
+        let trailEmitter = createParticleTrail(color: color, geometry:  geometry)
+        geometryNode.addParticleSystem(trailEmitter)
+        
+        if color == UIColor.red {
+            geometryNode.name = "red"
+        } else {
+            geometryNode.name = "notRed"
+        }
     }
     
     func cleanUp() {
@@ -100,6 +127,14 @@ class GameViewController: UIViewController {
                 node.removeFromParentNode()
             }
         }
+    }
+    
+    func createParticleTrail(color: UIColor, geometry: SCNGeometry) ->
+        SCNParticleSystem {
+            let trail = SCNParticleSystem(named: "Fire.scnp", inDirectory: nil)!
+            trail.particleColor = color
+            trail.emitterShape = geometry
+            return trail
     }
 
 }
